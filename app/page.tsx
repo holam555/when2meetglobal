@@ -192,6 +192,11 @@ export default function CreatePage() {
 
           {err && <div className="text-amber text-sm">{err}</div>}
 
+          <p className="text-xs text-mute/80 -mb-2">
+            On the next page you can mark detailed timeslots for each day — or
+            tap a date header to select the whole day at once.
+          </p>
+
           <button
             type="submit"
             className="w-full px-6 py-3.5 bg-amber text-bg rounded-md font-medium hover:bg-amber/90 transition flex items-center justify-center gap-2"
@@ -235,7 +240,8 @@ export default function CreatePage() {
 
           <p className="text-xs text-mute">
             Tap or drag to mark when you&apos;re{" "}
-            {mode === "free" ? "free" : "maybe available"}. Tap again to clear.
+            {mode === "free" ? "free" : "maybe available"}. Tap a date header to
+            toggle the whole day. Tap again to clear.
           </p>
 
           <AvailabilityGrid

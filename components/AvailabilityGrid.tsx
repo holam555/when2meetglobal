@@ -19,7 +19,7 @@ export function AvailabilityGrid({
   onChange: (next: Record<string, AvailabilityStatus>) => void;
   mode: EditorMode;
 }) {
-  const { dates, rowKeys } = useMemo(
+  const { dates, byDate, rowKeys } = useMemo(
     () => groupSlotsByLocalDate(utcSlots, viewerTz),
     [utcSlots, viewerTz]
   );
@@ -53,6 +53,20 @@ export function AvailabilityGrid({
     const next = { ...value };
     if (status === "busy") delete next[utc];
     else next[utc] = status;
+    onChange(next);
+  }
+
+  function toggleColumn(dateKey: string) {
+    const slots = byDate[dateKey] ?? [];
+    if (slots.length === 0) return;
+    const target: AvailabilityStatus = mode === "free" ? "free" : "maybe";
+    const allAlready = slots.every((u) => value[u] === target);
+    const next = { ...value };
+    if (allAlready) {
+      for (const u of slots) delete next[u];
+    } else {
+      for (const u of slots) next[u] = target;
+    }
     onChange(next);
   }
 
@@ -117,16 +131,36 @@ export function AvailabilityGrid({
             gridTemplateColumns: `48px repeat(${dates.length}, minmax(56px, 1fr))`,
           }}
         >
-          {/* Header row */}
+          {/* Header row — click date to toggle whole column */}
           <div className="sticky left-0 bg-bg z-10" />
-          {dates.map((d) => (
-            <div key={d} className="text-center pb-2 px-1">
-              <div className="text-xs text-mute uppercase tracking-wide">
-                {format(parseISO(d), "EEE")}
-              </div>
-              <div className="text-base font-serif">{format(parseISO(d), "MMM d")}</div>
-            </div>
-          ))}
+          {dates.map((d) => {
+            const slots = byDate[d] ?? [];
+            const target: AvailabilityStatus = mode === "free" ? "free" : "maybe";
+            const allSelected = slots.length > 0 && slots.every((u) => value[u] === target);
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => toggleColumn(d)}
+                title={allSelected ? "Clear this day" : `Mark whole day as ${target}`}
+                className={`text-center pb-2 px-1 group transition rounded-t-md ${
+                  allSelected
+                    ? "bg-amber/10 text-amber"
+                    : "text-ink hover:bg-surface2"
+                }`}
+              >
+                <div className={`text-xs uppercase tracking-wide ${allSelected ? "text-amber" : "text-mute"}`}>
+                  {format(parseISO(d), "EEE")}
+                </div>
+                <div className="text-base font-serif">{format(parseISO(d), "MMM d")}</div>
+                <div
+                  className={`mx-auto mt-0.5 h-0.5 w-6 rounded-full transition ${
+                    allSelected ? "bg-amber" : "bg-transparent group-hover:bg-border"
+                  }`}
+                />
+              </button>
+            );
+          })}
 
           {/* Rows */}
           {rowKeys.map((timeKey, rIdx) => {

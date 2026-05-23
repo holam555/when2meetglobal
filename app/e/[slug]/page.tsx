@@ -225,7 +225,8 @@ export default function EventPage() {
           </div>
 
           <p className="text-xs text-mute mb-3">
-            Tap or drag to mark when you&apos;re {mode === "free" ? "free" : "maybe available"}. Tap again to clear.
+            Tap or drag to mark when you&apos;re {mode === "free" ? "free" : "maybe available"}.
+            Tap a date header to toggle the whole day. Tap again to clear.
           </p>
 
           <AvailabilityGrid
