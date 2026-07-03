@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# When2Meet · Global
 
-## Getting Started
+A timezone-aware group scheduling app — think When2Meet, but everyone sees the grid in their own local time instead of the organizer's.
 
-First, run the development server:
+**Live demo: [when2meetglobal.vercel.app](https://when2meetglobal.vercel.app/)**
+
+## What it does
+
+- **Create an event** by picking candidate dates and a time-of-day range in your own timezone — no account required.
+- **Mark availability** on a drag-to-paint grid with three states (free / maybe / busy), or tap a date header to toggle the whole day at once.
+- **Share a link.** Each participant opens the same link, picks their own timezone, and the grid re-renders in their local hours (times are stored as UTC internally).
+- **See the group heatmap** of everyone's combined availability, plus a ranked list of the best time slots — scored by how many people are free/maybe, with a small bonus for slots that fall in everyone's local business hours.
+- **Organizer can confirm a slot**, which pins a "Confirmed" banner at the top of the event page for all participants.
+- Light/dark theme toggle, and event data persists via a shareable slug URL (`/e/[slug]`) so no login is needed to return to an event.
+
+## Tech stack
+
+- **[Next.js 14](https://nextjs.org)** (App Router) + **React 18** + **TypeScript**
+- **[Tailwind CSS](https://tailwindcss.com)** for styling
+- **[Zustand](https://github.com/pmndrs/zustand)** for client state
+- **[date-fns](https://date-fns.org)** / **date-fns-tz** for timezone-aware date math
+- **[Vercel KV](https://vercel.com/docs/storage/vercel-kv)** for event/response storage in production, with a local JSON-file fallback (`.data/`) so the app runs with zero setup in development
+- **nanoid** for short, shareable event slugs
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). In local dev, event data is written to `.data/*.json` automatically — no database setup required.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To use Vercel KV instead (e.g. for a production deploy), set `KV_REST_API_URL` and `KV_REST_API_TOKEN` in your environment; `lib/kv.ts` switches storage backends automatically when those are present.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
+```
+app/
+  page.tsx                 # Create-event flow (setup → mark availability)
+  e/[slug]/page.tsx         # Event page: submit availability, view heatmap & best times
+  api/events/               # REST endpoints for creating events and submitting responses
+components/                 # Calendar picker, availability grid, heatmap, timezone select, etc.
+lib/
+  timezone.ts              # UTC slot generation, local-time conversion/formatting
+  scoring.ts                # Tallies responses into per-slot scores and ranks best times
+  kv.ts                     # Storage layer (Vercel KV in prod, JSON files in dev)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Deployed on [Vercel](https://vercel.com). Push to `main` and connect the repo, or run:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+vercel deploy
+```
