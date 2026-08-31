@@ -19,7 +19,7 @@ A timezone-aware group scheduling app — think When2Meet, but everyone sees the
 - **[Tailwind CSS](https://tailwindcss.com)** for styling
 - **[Zustand](https://github.com/pmndrs/zustand)** for client state
 - **[date-fns](https://date-fns.org)** / **date-fns-tz** for timezone-aware date math
-- **[Vercel KV](https://vercel.com/docs/storage/vercel-kv)** for event/response storage in production, with a local JSON-file fallback (`.data/`) so the app runs with zero setup in development
+- **[Neon Postgres](https://neon.tech)** (via `@neondatabase/serverless`) for event/response storage in production, with a local JSON-file fallback (`.data/`) so the app runs with zero setup in development
 - **nanoid** for short, shareable event slugs
 
 ## Getting started
@@ -31,7 +31,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). In local dev, event data is written to `.data/*.json` automatically — no database setup required.
 
-To use Vercel KV instead (e.g. for a production deploy), set `KV_REST_API_URL` and `KV_REST_API_TOKEN` in your environment; `lib/kv.ts` switches storage backends automatically when those are present.
+To use Postgres instead (e.g. for a production deploy), set `DATABASE_URL` (or `POSTGRES_URL`) in your environment; `lib/kv.ts` switches storage backends automatically when it is present. The schema is created on first use — no migration step.
+
+### Provisioning the database
+
+In the Vercel dashboard: **Project → Storage → Create Database → Neon (Postgres)**, then connect it to the project. Vercel injects `DATABASE_URL` automatically. Redeploy afterwards — environment variable changes don't reach existing deployments.
+
+To point local dev at the same database, put the connection string in `.env.local` (gitignored):
+
+```
+DATABASE_URL=postgres://...
+```
+
+Two tables are used: `events` (slug → event JSON) and `responses` (one row per participant, keyed by response id). Keeping responses in their own rows means two people submitting availability at the same time can't overwrite each other.
 
 ## Project structure
 
@@ -44,7 +56,8 @@ components/                 # Calendar picker, availability grid, heatmap, timez
 lib/
   timezone.ts              # UTC slot generation, local-time conversion/formatting
   scoring.ts                # Tallies responses into per-slot scores and ranks best times
-  kv.ts                     # Storage layer (Vercel KV in prod, JSON files in dev)
+  kv.ts                     # Storage layer (Neon Postgres in prod, JSON files in dev)
+  apiError.ts               # Shared 503 + server-side logging for storage failures
 ```
 
 ## Deploy

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { createEvent } from "@/lib/kv";
+import { storageError } from "@/lib/apiError";
 import type { EventDoc } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,10 @@ export async function POST(req: Request) {
     organizerTimezone,
     createdAt: new Date().toISOString(),
   };
-  const bundle = await createEvent(event);
-  return NextResponse.json(bundle);
+  try {
+    const bundle = await createEvent(event);
+    return NextResponse.json(bundle);
+  } catch (e) {
+    return storageError("createEvent", e);
+  }
 }

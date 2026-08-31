@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { upsertResponse, readBundle } from "@/lib/kv";
+import { storageError } from "@/lib/apiError";
 import type { ResponseDoc } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request, { params }: { params: { slug: string } }) {
-  const bundle = await readBundle(params.slug);
+  let bundle;
+  try {
+    bundle = await readBundle(params.slug);
+  } catch (e) {
+    return storageError("readBundle", e);
+  }
   if (!bundle) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const body = await req.json();
   const { id, name, timezone, availability } = body ?? {};
@@ -30,6 +36,10 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
       })),
     createdAt: new Date().toISOString(),
   };
-  const updated = await upsertResponse(params.slug, response);
-  return NextResponse.json({ bundle: updated, responseId: response.id });
+  try {
+    const updated = await upsertResponse(params.slug, response);
+    return NextResponse.json({ bundle: updated, responseId: response.id });
+  } catch (e) {
+    return storageError("upsertResponse", e);
+  }
 }
